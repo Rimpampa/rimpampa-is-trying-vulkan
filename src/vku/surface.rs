@@ -29,6 +29,13 @@ impl<'a, 'b: 'a> Surface<'a, 'b> {
     pub fn extensions(window: &'a dyn rwh::HasRawWindowHandle) -> VkResult<Vec<&'static CStr>> {
         ash_window::enumerate_required_extensions(window)
     }
+
+    pub fn has_support(&self, dev: super::PhysicalDev<'_>, queue_family: u32) -> VkResult<bool> {
+        unsafe {
+            self.fns
+                .get_physical_device_surface_support(*dev, queue_family, self.surface)
+        }
+    }
 }
 
 impl Drop for Surface<'_, '_> {

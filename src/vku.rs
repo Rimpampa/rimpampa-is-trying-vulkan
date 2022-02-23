@@ -9,3 +9,6 @@ pub use physical_dev::*;
 
 mod surface;
 pub use surface::*;
+
+mod logical_dev;
+pub use logical_dev::*;
