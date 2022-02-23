@@ -27,4 +27,6 @@ fn main() {
     };
 
     let _debug_utils = vku::DebugUtils::new(&instance).unwrap();
+
+    let _phy_dev = vku::PhysicalDev::list(&instance).unwrap();
 }
