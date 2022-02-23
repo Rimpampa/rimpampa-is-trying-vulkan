@@ -16,7 +16,7 @@ fn main() {
         // ...
     ];
 
-    let _instance = unsafe {
+    let instance = unsafe {
         vku::Instance::new(
             &entry,
             &validation_layers,
@@ -25,4 +25,6 @@ fn main() {
         )
         .unwrap()
     };
+
+    let _debug_utils = vku::DebugUtils::new(&instance).unwrap();
 }

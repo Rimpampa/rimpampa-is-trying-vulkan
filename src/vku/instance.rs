@@ -28,10 +28,16 @@ impl<'a> Instance<'a> {
             .api_version(vk::API_VERSION_1_0)
             .build();
 
+        #[cfg(debug_assertions)]
+        let mut dbg_utils_info = super::DebugUtils::create_info();
+
         let instance_info = vk::InstanceCreateInfo::builder()
             .application_info(&app_info)
             .enabled_extension_names(extensions_names)
             .enabled_layer_names(validation_layers_names);
+
+        #[cfg(debug_assertions)]
+        let instance_info = instance_info.push_next(&mut dbg_utils_info);
 
         let instance = entry.create_instance(&instance_info.build(), None)?;
 
