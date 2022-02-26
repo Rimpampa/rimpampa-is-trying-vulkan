@@ -1,4 +1,4 @@
-use ash::{prelude::*, vk};
+use ash::vk;
 use cstr::cstr;
 use std::{ffi, ops, os::raw};
 
@@ -19,7 +19,7 @@ impl<'a> Instance<'a> {
         validation_layers_names: &[*const raw::c_char],
         extensions_names: &[*const raw::c_char],
         app_name: &ffi::CStr,
-    ) -> VkResult<Self> {
+    ) -> super::Result<Self> {
         let app_info = vk::ApplicationInfo::builder()
             .application_name(app_name)
             .application_version(vk::make_api_version(0, 0, 1, 0))

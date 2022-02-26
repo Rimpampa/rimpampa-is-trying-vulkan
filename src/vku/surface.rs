@@ -1,6 +1,6 @@
 use std::ffi::CStr;
 
-use ash::{extensions::khr, prelude::*, vk};
+use ash::{extensions::khr, vk};
 use raw_window_handle as rwh;
 
 pub struct Surface<'a, 'b: 'a> {
@@ -15,7 +15,7 @@ impl<'a, 'b: 'a> Surface<'a, 'b> {
     pub fn new(
         instance: &'a super::Instance<'a>,
         window: &'b dyn rwh::HasRawWindowHandle,
-    ) -> VkResult<Self> {
+    ) -> super::Result<Self> {
         let surface =
             unsafe { ash_window::create_surface(instance.entry(), instance, window, None) }?;
         Ok(Self {
@@ -26,15 +26,21 @@ impl<'a, 'b: 'a> Surface<'a, 'b> {
         })
     }
 
-    pub fn extensions(window: &'a dyn rwh::HasRawWindowHandle) -> VkResult<Vec<&'static CStr>> {
-        ash_window::enumerate_required_extensions(window)
+    pub fn extensions(
+        window: &'a dyn rwh::HasRawWindowHandle,
+    ) -> super::Result<Vec<&'static CStr>> {
+        Ok(ash_window::enumerate_required_extensions(window)?)
     }
 
-    pub fn has_support(&self, dev: super::PhysicalDev<'_>, queue_family: u32) -> VkResult<bool> {
-        unsafe {
+    pub fn has_support(
+        &self,
+        dev: super::PhysicalDev<'_>,
+        queue_family: u32,
+    ) -> super::Result<bool> {
+        Ok(unsafe {
             self.fns
-                .get_physical_device_surface_support(*dev, queue_family, self.surface)
-        }
+                .get_physical_device_surface_support(*dev, queue_family, self.surface)?
+        })
     }
 }
 

@@ -1,4 +1,4 @@
-use ash::{prelude::*, vk};
+use ash::vk;
 
 pub struct LogicalDev<'a> {
     _physical_dev: super::PhysicalDev<'a>,
@@ -10,7 +10,7 @@ impl<'a> LogicalDev<'a> {
     pub fn new(
         physical_dev: super::PhysicalDev<'a>,
         queue_family_indices: &[u32],
-    ) -> VkResult<Self> {
+    ) -> super::Result<Self> {
         // Can't have a device with zero queues enabled
         debug_assert!(!queue_family_indices.is_empty());
         // Can't create two separate queues of the same family

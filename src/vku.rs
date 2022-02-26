@@ -1,3 +1,6 @@
+mod result;
+pub use result::*;
+
 mod instance;
 pub use instance::*;
 

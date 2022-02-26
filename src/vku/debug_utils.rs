@@ -1,6 +1,6 @@
 use std::{ffi, marker};
 
-use ash::{extensions::ext, prelude::*, vk};
+use ash::{extensions::ext, vk};
 
 unsafe extern "system" fn vk_debug_callback(
     message_severity: vk::DebugUtilsMessageSeverityFlagsEXT,
@@ -48,7 +48,7 @@ impl<'a> DebugUtils<'a> {
             .build()
     }
 
-    pub fn new(instance: &'a super::Instance<'a>) -> VkResult<Self> {
+    pub fn new(instance: &'a super::Instance<'a>) -> super::Result<Self> {
         let context = ext::DebugUtils::new(instance.entry(), instance);
         let messenger_create_info = Self::create_info();
         let messenger =

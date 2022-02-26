@@ -1,6 +1,6 @@
 use std::{convert, ffi, ops::Not};
 
-use ash::{prelude::*, vk};
+use ash::vk;
 use cstr::cstr;
 use winit::window as win;
 
@@ -29,7 +29,7 @@ struct VulkanState<'a> {
 }
 
 impl<'a> VulkanState<'a> {
-    fn create(entry: &'a ash::Entry, window: &'a win::Window) -> Self {
+    fn create(entry: &'a ash::Entry, window: &'a win::Window) -> vku::Result<Self> {
         let validation_layers = vec![
             cstr!(VK_LAYER_KHRONOS_validation).as_ptr(),
             // ...
@@ -54,30 +54,31 @@ impl<'a> VulkanState<'a> {
                 &validation_layers,
                 &extensions,
                 cstr!("Vulkan Tutorial"),
-            )
-            .unwrap()
+            )?
         };
 
-        VulkanStateBuilder {
+        VulkanState::try_new(
             instance,
             #[cfg(debug_assertions)]
-            debug_builder: |i| vku::DebugUtils::new(i).unwrap(),
-            surface_builder: |i| vku::Surface::new(i, window).unwrap(),
-            phy_devs_builder: |i| vku::PhysicalDev::list(i).unwrap(),
-            logic_dev_builder: |devs, s| {
-                let (idx, queues) = devs
+            |i| vku::DebugUtils::new(i),
+            |i| vku::Surface::new(i, window),
+            |i| vku::PhysicalDev::list(i),
+            |devs, s| {
+                let (idx, queues): (usize, Vec<u32>) = devs
                     .iter()
                     .copied()
                     .filter(|&dev| is_physical_device_suitable(dev))
-                    .map(|dev| QueueFamiliesIndices::get(s, dev).unwrap())
                     .enumerate()
-                    .flat_map(|(dev_idx, idxs)| Some(dev_idx).zip(idxs.zip()))
+                    .flat_map(|(i, dev)| {
+                        QueueFamiliesIndices::get(s, dev)
+                            .map(|indices| Some(i).zip(indices.zip()))
+                            .transpose()
+                    })
                     .next()
-                    .expect("no suitable physical device found");
-                vku::LogicalDev::new(devs[idx], &queues).unwrap()
+                    .expect("no suitable physical device found")?;
+                vku::LogicalDev::new(devs[idx], &queues)
             },
-        }
-        .build()
+        )
     }
 }
 
@@ -96,7 +97,7 @@ struct QueueFamiliesIndices {
 }
 
 impl QueueFamiliesIndices {
-    fn get(surface: &vku::Surface, dev: vku::PhysicalDev) -> VkResult<Self> {
+    fn get(surface: &vku::Surface, dev: vku::PhysicalDev) -> vku::Result<Self> {
         let queue_families = dev.queue_families();
         let graphics = queue_families
             .iter()

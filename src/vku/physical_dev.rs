@@ -1,4 +1,4 @@
-use ash::{prelude::*, vk};
+use ash::vk;
 
 #[derive(Clone, Copy)]
 pub struct PhysicalDev<'a> {
@@ -11,7 +11,7 @@ impl<'a> PhysicalDev<'a> {
         self.instance
     }
 
-    pub fn list(instance: &'a super::Instance<'a>) -> VkResult<Vec<Self>> {
+    pub fn list(instance: &'a super::Instance<'a>) -> super::Result<Vec<Self>> {
         let devices = unsafe { instance.enumerate_physical_devices()? };
         Ok(devices
             .into_iter()
