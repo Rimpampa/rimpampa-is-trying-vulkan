@@ -6,27 +6,7 @@ use winit::window as win;
 
 mod vku;
 
-#[ouroboros::self_referencing]
-struct VulkanState<'a> {
-    instance: vku::Instance<'a>,
-
-    #[cfg(debug_assertions)]
-    #[covariant]
-    #[borrows(instance)]
-    debug: vku::DebugUtils<'this>,
-
-    #[covariant]
-    #[borrows(instance)]
-    surface: vku::Surface<'this, 'a>,
-
-    #[covariant]
-    #[borrows(instance)]
-    phy_devs: Vec<vku::PhysicalDev<'this>>,
-
-    #[covariant]
-    #[borrows(phy_devs, surface)]
-    logic_dev: vku::LogicalDev<'this>,
-}
+type VulkanState<'a> = vku::LogicalDev<vku::Surface<'a, vku::DebugUtils<vku::Instance<'a>>>>;
 
 impl<'a> VulkanState<'a> {
     fn create(entry: &'a ash::Entry, window: &'a win::Window) -> vku::Result<Self> {
@@ -42,7 +22,7 @@ impl<'a> VulkanState<'a> {
         ];
 
         extensions.extend(
-            vku::Surface::extensions(&window)
+            vku::Surface::<vku::Instance>::extensions(&window)
                 .unwrap()
                 .into_iter()
                 .map(ffi::CStr::as_ptr),
@@ -57,32 +37,29 @@ impl<'a> VulkanState<'a> {
             )?
         };
 
-        VulkanState::try_new(
-            instance,
-            #[cfg(debug_assertions)]
-            |i| vku::DebugUtils::new(i),
-            |i| vku::Surface::new(i, window),
-            |i| vku::PhysicalDev::list(i),
-            |devs, s| {
-                let (idx, queues): (usize, Vec<u32>) = devs
-                    .iter()
-                    .copied()
-                    .filter(|&dev| is_physical_device_suitable(dev))
-                    .enumerate()
-                    .flat_map(|(i, dev)| {
-                        QueueFamiliesIndices::get(s, dev)
-                            .map(|indices| Some(i).zip(indices.zip()))
-                            .transpose()
-                    })
-                    .next()
-                    .expect("no suitable physical device found")?;
-                vku::LogicalDev::new(devs[idx], &queues)
-            },
-        )
+        let debug_utils = vku::DebugUtils::new(instance)?;
+
+        let surface = vku::Surface::new(debug_utils, window)?;
+
+        let phy_devs = vku::PhysicalDevList::list(surface)?;
+
+        let (idx, queues): (usize, Vec<u32>) = phy_devs
+            .iter()
+            .filter(|dev| is_physical_device_suitable(*dev))
+            .enumerate()
+            .flat_map(|(i, dev)| {
+                QueueFamiliesIndices::get(dev)
+                    .map(|indices| Some(i).zip(indices.zip()))
+                    .transpose()
+            })
+            .next()
+            .expect("no suitable physical device found")?;
+
+        phy_devs.select(idx, &queues)
     }
 }
 
-fn is_physical_device_suitable(dev: vku::PhysicalDev) -> bool {
+fn is_physical_device_suitable<I: vku::InstanceHolder>(dev: vku::PhysicalDevRef<I>) -> bool {
     let prop = dev.properties();
     let feat = dev.features();
     feat.tessellation_shader > 0
@@ -97,14 +74,14 @@ struct QueueFamiliesIndices {
 }
 
 impl QueueFamiliesIndices {
-    fn get(surface: &vku::Surface, dev: vku::PhysicalDev) -> vku::Result<Self> {
+    fn get<I: vku::SurfaceHolder>(dev: vku::PhysicalDevRef<I>) -> vku::Result<Self> {
         let queue_families = dev.queue_families();
         let graphics = queue_families
             .iter()
             .position(|fam| fam.queue_flags.contains(vk::QueueFlags::GRAPHICS))
             .map(|v| v as u32);
         let present = (0..queue_families.len())
-            .map(|fam| surface.has_support(dev, fam as u32).unwrap())
+            .map(|fam| dev.supports_surface(fam as u32).unwrap())
             .position(convert::identity)
             .map(|v| v as u32);
         Ok(Self { graphics, present })

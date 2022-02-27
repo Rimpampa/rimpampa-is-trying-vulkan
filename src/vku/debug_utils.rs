@@ -1,4 +1,4 @@
-use std::{ffi, marker};
+use std::ffi;
 
 use ash::{extensions::ext, vk};
 
@@ -26,14 +26,13 @@ unsafe extern "system" fn vk_debug_callback(
     vk::FALSE
 }
 
-pub struct DebugUtils<'a> {
+pub struct DebugUtils<I: super::InstanceHolder> {
+    instance: I,
     context: ext::DebugUtils,
     messenger: vk::DebugUtilsMessengerEXT,
-
-    _instance: marker::PhantomData<&'a super::Instance<'a>>,
 }
 
-impl<'a> DebugUtils<'a> {
+impl<I: super::InstanceHolder> DebugUtils<I> {
     pub fn create_info() -> vk::DebugUtilsMessengerCreateInfoEXT {
         vk::DebugUtilsMessengerCreateInfoEXT::builder()
             .message_severity({
@@ -48,21 +47,21 @@ impl<'a> DebugUtils<'a> {
             .build()
     }
 
-    pub fn new(instance: &'a super::Instance<'a>) -> super::Result<Self> {
-        let context = ext::DebugUtils::new(instance.entry(), instance);
+    pub fn new(instance: I) -> super::Result<Self> {
+        let context = ext::DebugUtils::new(instance.vk_entry(), instance.vk_instance());
         let messenger_create_info = Self::create_info();
         let messenger =
             unsafe { context.create_debug_utils_messenger(&messenger_create_info, None)? };
 
         Ok(Self {
+            instance,
             context,
             messenger,
-            _instance: marker::PhantomData,
         })
     }
 }
 
-impl Drop for DebugUtils<'_> {
+impl<I: super::InstanceHolder> Drop for DebugUtils<I> {
     fn drop(&mut self) {
         unsafe {
             self.context
@@ -70,3 +69,6 @@ impl Drop for DebugUtils<'_> {
         }
     }
 }
+
+derive_instance_holder!(DebugUtils<I> = instance: I);
+derive_surface_holder!(DebugUtils<I> = instance: I);

@@ -1,14 +1,15 @@
 use ash::vk;
 
-pub struct LogicalDev<'a> {
-    _physical_dev: super::PhysicalDev<'a>,
+pub struct LogicalDev<I: super::InstanceHolder> {
+    instance: I,
     device: ash::Device,
     queues: Vec<vk::Queue>,
 }
 
-impl<'a> LogicalDev<'a> {
-    pub fn new(
-        physical_dev: super::PhysicalDev<'a>,
+impl<I: super::InstanceHolder> LogicalDev<I> {
+    pub(super) fn new(
+        instance: I,
+        physical_dev: vk::PhysicalDevice,
         queue_family_indices: &[u32],
     ) -> super::Result<Self> {
         // Can't have a device with zero queues enabled
@@ -35,9 +36,9 @@ impl<'a> LogicalDev<'a> {
             .build();
 
         let device = unsafe {
-            physical_dev
-                .instance()
-                .create_device(*physical_dev, &create_info, None)?
+            instance
+                .vk_instance()
+                .create_device(physical_dev, &create_info, None)?
         };
         let queues = queue_family_indices
             .iter()
@@ -45,15 +46,18 @@ impl<'a> LogicalDev<'a> {
             .collect();
 
         Ok(Self {
-            _physical_dev: physical_dev,
+            instance,
             device,
             queues,
         })
     }
 }
 
-impl Drop for LogicalDev<'_> {
+impl<I: super::InstanceHolder> Drop for LogicalDev<I> {
     fn drop(&mut self) {
         unsafe { self.device.destroy_device(None) }
     }
 }
+
+derive_instance_holder!(LogicalDev<I> = instance: I);
+derive_surface_holder!(LogicalDev<I> = instance: I);

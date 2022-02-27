@@ -1,6 +1,6 @@
 use ash::vk;
 use cstr::cstr;
-use std::{ffi, ops, os::raw};
+use std::{ffi, os::raw};
 
 pub struct Instance<'a> {
     instance: ash::Instance,
@@ -29,7 +29,7 @@ impl<'a> Instance<'a> {
             .build();
 
         #[cfg(debug_assertions)]
-        let mut dbg_utils_info = super::DebugUtils::create_info();
+        let mut dbg_utils_info = super::DebugUtils::<Self>::create_info();
 
         let instance_info = vk::InstanceCreateInfo::builder()
             .application_info(&app_info)
@@ -43,18 +43,6 @@ impl<'a> Instance<'a> {
 
         Ok(Self { instance, entry })
     }
-
-    pub fn entry(&self) -> &ash::Entry {
-        self.entry
-    }
-}
-
-impl ops::Deref for Instance<'_> {
-    type Target = ash::Instance;
-
-    fn deref(&self) -> &Self::Target {
-        &self.instance
-    }
 }
 
 impl Drop for Instance<'_> {
@@ -63,4 +51,33 @@ impl Drop for Instance<'_> {
             self.instance.destroy_instance(None);
         }
     }
+}
+
+pub trait InstanceHolder {
+    fn vk_instance(&self) -> &ash::Instance;
+    fn vk_entry(&self) -> &ash::Entry;
+}
+
+impl InstanceHolder for Instance<'_> {
+    fn vk_instance(&self) -> &ash::Instance {
+        &self.instance
+    }
+
+    fn vk_entry(&self) -> &ash::Entry {
+        self.entry
+    }
+}
+
+macro_rules! derive_instance_holder {
+    ($self:ty = $field:ident : $generic:ident) => {
+        impl<$generic: $crate::vku::InstanceHolder> $crate::vku::InstanceHolder for $self {
+            fn vk_instance(&self) -> &ash::Instance {
+                self.$field.vk_instance()
+            }
+
+            fn vk_entry(&self) -> &ash::Entry {
+                self.$field.vk_entry()
+            }
+        }
+    };
 }
