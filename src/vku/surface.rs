@@ -39,12 +39,19 @@ impl<I: super::InstanceHolder> Drop for Surface<'_, I> {
 
 derive_instance_holder!(Surface<'_, I> = instance: I);
 
-pub trait SurfaceHolder: super::InstanceHolder {
-    fn vk_surface_fns(&self) -> &khr::Surface;
-    fn vk_surface(&self) -> &vk::SurfaceKHR;
+pub(super) mod pvt {
+    use super::*;
+
+    pub trait SurfaceHolder: super::super::InstanceHolder {
+        fn vk_surface_fns(&self) -> &khr::Surface;
+        fn vk_surface(&self) -> &vk::SurfaceKHR;
+    }
 }
 
-impl<I: super::InstanceHolder> SurfaceHolder for Surface<'_, I> {
+pub trait SurfaceHolder: pvt::SurfaceHolder {}
+impl<T: pvt::SurfaceHolder> SurfaceHolder for T {}
+
+impl<I: super::InstanceHolder> pvt::SurfaceHolder for Surface<'_, I> {
     fn vk_surface_fns(&self) -> &khr::Surface {
         &self.fns
     }
@@ -56,7 +63,9 @@ impl<I: super::InstanceHolder> SurfaceHolder for Surface<'_, I> {
 
 macro_rules! derive_surface_holder {
     ($self:ty = $field:ident : $generic:ident) => {
-        impl<$generic: $crate::vku::SurfaceHolder> $crate::vku::SurfaceHolder for $self {
+        impl<$generic: $crate::vku::SurfaceHolder> $crate::vku::surface::pvt::SurfaceHolder
+            for $self
+        {
             fn vk_surface_fns(&self) -> &ash::extensions::khr::Surface {
                 self.$field.vk_surface_fns()
             }

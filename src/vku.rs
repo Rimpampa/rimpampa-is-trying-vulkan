@@ -2,18 +2,18 @@ mod result;
 pub use result::*;
 
 #[macro_use]
-mod instance;
-pub use instance::*;
+pub mod instance;
+pub use instance::{Instance, InstanceHolder};
 
 #[macro_use]
-mod surface;
-pub use surface::*;
+pub mod surface;
+pub use surface::{Surface, SurfaceHolder};
 
-mod debug_utils;
-pub use debug_utils::*;
+pub mod debug_utils;
+pub use debug_utils::DebugUtils;
 
-mod physical_dev;
-pub use physical_dev::*;
+pub mod physical_dev;
+pub use physical_dev::{PhysicalDevList, PhysicalDevRef};
 
-mod logical_dev;
-pub use logical_dev::*;
+pub mod logical_dev;
+pub use logical_dev::LogicalDev;

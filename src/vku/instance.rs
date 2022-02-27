@@ -53,12 +53,17 @@ impl Drop for Instance<'_> {
     }
 }
 
-pub trait InstanceHolder {
-    fn vk_instance(&self) -> &ash::Instance;
-    fn vk_entry(&self) -> &ash::Entry;
+pub(super) mod pvt {
+    pub trait InstanceHolder {
+        fn vk_instance(&self) -> &ash::Instance;
+        fn vk_entry(&self) -> &ash::Entry;
+    }
 }
 
-impl InstanceHolder for Instance<'_> {
+pub trait InstanceHolder: pvt::InstanceHolder {}
+impl<T: pvt::InstanceHolder> InstanceHolder for T {}
+
+impl pvt::InstanceHolder for Instance<'_> {
     fn vk_instance(&self) -> &ash::Instance {
         &self.instance
     }
@@ -70,7 +75,9 @@ impl InstanceHolder for Instance<'_> {
 
 macro_rules! derive_instance_holder {
     ($self:ty = $field:ident : $generic:ident) => {
-        impl<$generic: $crate::vku::InstanceHolder> $crate::vku::InstanceHolder for $self {
+        impl<$generic: $crate::vku::InstanceHolder> $crate::vku::instance::pvt::InstanceHolder
+            for $self
+        {
             fn vk_instance(&self) -> &ash::Instance {
                 self.$field.vk_instance()
             }
