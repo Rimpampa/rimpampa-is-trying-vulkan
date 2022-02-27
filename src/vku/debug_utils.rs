@@ -26,6 +26,20 @@ unsafe extern "system" fn vk_debug_callback(
     vk::FALSE
 }
 
+pub fn create_info() -> vk::DebugUtilsMessengerCreateInfoEXT {
+    vk::DebugUtilsMessengerCreateInfoEXT::builder()
+        .message_severity({
+            use vk::DebugUtilsMessageSeverityFlagsEXT as flag;
+            flag::WARNING | flag::INFO | flag::VERBOSE | flag::ERROR
+        })
+        .message_type({
+            use vk::DebugUtilsMessageTypeFlagsEXT as flag;
+            flag::VALIDATION | flag::PERFORMANCE | flag::GENERAL
+        })
+        .pfn_user_callback(Some(vk_debug_callback))
+        .build()
+}
+
 pub struct DebugUtils<I: super::InstanceHolder> {
     instance: I,
     context: ext::DebugUtils,
@@ -33,23 +47,9 @@ pub struct DebugUtils<I: super::InstanceHolder> {
 }
 
 impl<I: super::InstanceHolder> DebugUtils<I> {
-    pub fn create_info() -> vk::DebugUtilsMessengerCreateInfoEXT {
-        vk::DebugUtilsMessengerCreateInfoEXT::builder()
-            .message_severity({
-                use vk::DebugUtilsMessageSeverityFlagsEXT as flag;
-                flag::WARNING | flag::INFO | flag::VERBOSE | flag::ERROR
-            })
-            .message_type({
-                use vk::DebugUtilsMessageTypeFlagsEXT as flag;
-                flag::VALIDATION | flag::PERFORMANCE | flag::GENERAL
-            })
-            .pfn_user_callback(Some(vk_debug_callback))
-            .build()
-    }
-
     pub fn new(instance: I) -> super::Result<Self> {
         let context = ext::DebugUtils::new(instance.vk_entry(), instance.vk_instance());
-        let messenger_create_info = Self::create_info();
+        let messenger_create_info = create_info();
         let messenger =
             unsafe { context.create_debug_utils_messenger(&messenger_create_info, None)? };
 

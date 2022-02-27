@@ -22,7 +22,7 @@ impl<'a> VulkanState<'a> {
         ];
 
         extensions.extend(
-            vku::Surface::<vku::Instance>::extensions(&window)
+            vku::surface::extensions(&window)
                 .unwrap()
                 .into_iter()
                 .map(ffi::CStr::as_ptr),

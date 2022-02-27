@@ -29,7 +29,7 @@ impl<'a> Instance<'a> {
             .build();
 
         #[cfg(debug_assertions)]
-        let mut dbg_utils_info = super::DebugUtils::<Self>::create_info();
+        let mut dbg_utils_info = super::debug_utils::create_info();
 
         let instance_info = vk::InstanceCreateInfo::builder()
             .application_info(&app_info)

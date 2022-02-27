@@ -3,6 +3,10 @@ use std::{ffi::CStr, marker};
 use ash::{extensions::khr, vk};
 use raw_window_handle as rwh;
 
+pub fn extensions(window: &dyn rwh::HasRawWindowHandle) -> super::Result<Vec<&'static CStr>> {
+    Ok(ash_window::enumerate_required_extensions(window)?)
+}
+
 pub struct Surface<'a, I: super::InstanceHolder> {
     instance: I,
     surface: vk::SurfaceKHR,
@@ -22,12 +26,6 @@ impl<'a, I: super::InstanceHolder> Surface<'a, I> {
             window: marker::PhantomData,
             instance,
         })
-    }
-
-    pub fn extensions(
-        window: &'a dyn rwh::HasRawWindowHandle,
-    ) -> super::Result<Vec<&'static CStr>> {
-        Ok(ash_window::enumerate_required_extensions(window)?)
     }
 }
 
