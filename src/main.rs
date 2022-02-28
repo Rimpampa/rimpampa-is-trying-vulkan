@@ -6,7 +6,7 @@ use winit::window as win;
 
 mod vku;
 
-type VulkanState<'a> = vku::LogicalDev<vku::Surface<'a, vku::DebugUtils<vku::Instance<'a>>>>;
+struct VulkanState<'a>(vku::LogicalDev<vku::Surface<'a, vku::DebugUtils<vku::Instance<'a>>>>);
 
 impl<'a> VulkanState<'a> {
     fn create(entry: &'a ash::Entry, window: &'a win::Window) -> vku::Result<Self> {
@@ -55,7 +55,9 @@ impl<'a> VulkanState<'a> {
             .next()
             .expect("no suitable physical device found")?;
 
-        phy_devs.select(idx, &queues)
+        let logic_dev = phy_devs.select(idx, &queues)?;
+
+        Ok(Self(logic_dev))
     }
 }
 
