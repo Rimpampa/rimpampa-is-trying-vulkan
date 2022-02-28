@@ -1,12 +1,20 @@
 use ash::vk;
 
+/// A wrapper around all the necessary state needed to hold a Vulkan logical device.
+///
+/// A Vulkan logical device is a connection to a physical device which specifies a subeset of
+/// the capabilities of that physical device that it needs to perform further operations
 pub struct LogicalDev<I: super::InstanceHolder> {
+    /// The instance which this logical device belongs to
     instance: I,
+    /// The actual Vulkan device handle
     device: ash::Device,
+    /// The Vulkan queue handles selected on creation
     queues: Vec<vk::Queue>,
 }
 
 impl<I: super::InstanceHolder> LogicalDev<I> {
+    /// Creates a new Vulkan device by chosing a list of queue families from a physical device
     pub(super) fn new(
         instance: I,
         physical_dev: vk::PhysicalDevice,
