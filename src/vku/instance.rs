@@ -99,18 +99,35 @@ impl pvt::InstanceHolder for Instance<'_> {
 /// Implements the [`InstanceHolder`] in a transitive way by defining the methods
 /// using a field of the struct that already implements them
 ///
+/// The `#[generics(...)]` meta-like attribute can be added before everything to declare
+/// additional generics (either lifetimes or types).
+///
 /// # Example
 ///
+/// Derive the trait on a wrapper type
 /// ```
 /// struct InstanceWrapper<I: InstanceHolder>(I);
 ///
 /// derive_instance_holder!(InstanceWrapper<I> = 0: I);
 /// ```
+///
+/// Derive the trait on a wrapper type that has additional generics
+/// ```
+/// struct InstanceRefWrapper<'a, I: InstanceHolder>(&'a I);
+///
+/// derive_instance_holder!(
+///     #[generics('a)]
+///     InstanceRefWrapper<'a, I> = 0: I
+/// );
+/// ```
 macro_rules! derive_instance_holder {
-    ($self:ty = $field:ident : $generic:ident) => {
-        impl<$generic: $crate::vku::InstanceHolder> $crate::vku::instance::pvt::InstanceHolder
-            for $self
-        {
+    ( $( #[generics( $( $generics:tt )* )] )? $self:ty = $field:tt : $generic:ident) => {
+        impl<
+            // Additional generics, note the comma before closing the optional block
+            $( $( $generics )* , )?
+            // InstanceHodler generic
+            $generic : $crate::vku::InstanceHolder
+        > $crate::vku::instance::pvt::InstanceHolder for $self {
             fn vk_instance(&self) -> &ash::Instance {
                 self.$field.vk_instance()
             }

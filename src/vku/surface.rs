@@ -91,18 +91,35 @@ impl<I: super::InstanceHolder> pvt::SurfaceHolder for Surface<'_, I> {
 /// Implements the [`SurfaceHolder`] in a transitive way by defining the methods
 /// using a field of the struct that already implements them
 ///
+/// The `#[generics(...)]` meta-like attribute can be added before everything to declare
+/// additional generics (either lifetimes or types).
+///
 /// # Example
 ///
+/// Derive the trait on a wrapper type
 /// ```
 /// struct SurfaceWrapper<I: SurfaceHolder>(I);
 ///
 /// derive_surface_holder!(SurfaceWrapper<I> = 0: I);
 /// ```
+///
+/// Derive the trait on a wrapper type that has additional generics
+/// ```
+/// struct SurfaceRefWrapper<'a, I: SurfaceHolder>(&'a I);
+///
+/// derive_surface_holder!(
+///     #[generics('a)]
+///     SurfaceRefWrapper<'a, I> = 0: I
+/// );
+/// ```
 macro_rules! derive_surface_holder {
-    ($self:ty = $field:ident : $generic:ident) => {
-        impl<$generic: $crate::vku::SurfaceHolder> $crate::vku::surface::pvt::SurfaceHolder
-            for $self
-        {
+    ( $( #[generics( $( $generics:tt )* )] )? $self:ty = $field:tt : $generic:ident) => {
+        impl<
+            // Additional generics, note the comma before closing the optional block
+            $( $( $generics )* , )?
+            // SurfaceHolder generic
+            $generic : $crate::vku::SurfaceHolder
+        > $crate::vku::surface::pvt::SurfaceHolder for $self {
             fn vk_surface_fns(&self) -> &ash::extensions::khr::Surface {
                 self.$field.vk_surface_fns()
             }
