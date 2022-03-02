@@ -1,4 +1,4 @@
-use std::{convert, ffi, ops::Not};
+use std::{convert, ffi};
 
 use ash::vk;
 use cstr::cstr;
@@ -6,7 +6,13 @@ use winit::window as win;
 
 mod vku;
 
-struct VulkanState<'a>(vku::LogicalDev<vku::Surface<'a, vku::DebugUtils<vku::Instance<'a>>>>);
+struct VulkanState<'a>(
+    vku::LogicalDev<
+        'static,
+        vku::Surface<'a, vku::DebugUtils<vku::Instance<'a>>>,
+        Vec<vku::QueueFamilyInfo<'static>>,
+    >,
+);
 
 impl<'a> VulkanState<'a> {
     fn create(entry: &'a ash::Entry, window: &'a win::Window) -> vku::Result<Self> {
@@ -43,7 +49,7 @@ impl<'a> VulkanState<'a> {
 
         let phy_devs = vku::PhysicalDevList::list(surface)?;
 
-        let (idx, queues): (usize, Vec<u32>) = phy_devs
+        let (idx, queues): (usize, Vec<vku::QueueFamilyInfo<'_>>) = phy_devs
             .iter()
             .filter(|dev| is_physical_device_suitable(*dev))
             .enumerate()
@@ -55,7 +61,7 @@ impl<'a> VulkanState<'a> {
             .next()
             .expect("no suitable physical device found")?;
 
-        let logic_dev = phy_devs.select(idx, &queues)?;
+        let logic_dev = unsafe { phy_devs.select(idx, queues)? };
 
         Ok(Self(logic_dev))
     }
@@ -89,11 +95,17 @@ impl QueueFamiliesIndices {
         Ok(Self { graphics, present })
     }
 
-    fn zip(self) -> Option<Vec<u32>> {
+    fn zip(self) -> Option<Vec<vku::QueueFamilyInfo<'static>>> {
         let arr = [self.graphics?, self.present?];
-        let mut vec = Vec::with_capacity(arr.len());
+        let mut vec = Vec::<vku::QueueFamilyInfo>::with_capacity(arr.len());
         arr.into_iter().for_each(|n| {
-            vec.contains(&n).not().then(|| vec.push(n));
+            if vec.iter().any(|i| i.index == n) {
+                return;
+            }
+            vec.push(vku::QueueFamilyInfo {
+                index: n,
+                priorities: &[1.0],
+            })
         });
         Some(vec)
     }

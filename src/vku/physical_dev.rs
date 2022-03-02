@@ -26,7 +26,7 @@ pub struct PhysicalDevRef<'a, I: super::InstanceHolder> {
     /// Instance to which the devices belongs
     instance: &'a I,
     /// Device handle
-    device: vk::PhysicalDevice,
+    pub handle: vk::PhysicalDevice,
 }
 
 // Cannot derive Clone + Copy due to the unwanted additional trait bound constrains
@@ -34,8 +34,8 @@ pub struct PhysicalDevRef<'a, I: super::InstanceHolder> {
 
 impl<I: super::InstanceHolder> Clone for PhysicalDevRef<'_, I> {
     fn clone(&self) -> Self {
-        let Self { instance, device } = *self;
-        Self { instance, device }
+        let Self { instance, handle } = *self;
+        Self { instance, handle }
     }
 }
 
@@ -52,7 +52,7 @@ impl<I: super::InstanceHolder> PhysicalDevList<I> {
     pub fn get(&self, index: usize) -> Option<PhysicalDevRef<'_, I>> {
         Some(PhysicalDevRef {
             instance: &self.instance,
-            device: *self.devices.get(index)?,
+            handle: *self.devices.get(index)?,
         })
     }
 
@@ -60,18 +60,43 @@ impl<I: super::InstanceHolder> PhysicalDevList<I> {
     pub fn iter(&self) -> impl Iterator<Item = PhysicalDevRef<'_, I>> {
         self.devices.iter().map(|&device| PhysicalDevRef {
             instance: &self.instance,
-            device,
+            handle: device,
         })
     }
 
     /// Selects the physical device at `index` and a list of queue family indices
     /// and uses them to construct a Vulkan logical device
-    pub fn select(
+    ///
+    /// # Parameters
+    ///
+    /// - `index`: the index of the physical device
+    /// - `queue_family_infos`: queue family info and queues count
+    ///
+    /// # Panics
+    ///
+    /// If `index` points outside the list of available physical devices
+    ///
+    /// ## Debug Only
+    ///
+    /// If the same queue index is specified twice, or if `queue_family_infos` is empty
+    ///
+    /// # Safety
+    ///
+    /// `queue_family_infos` must be valid for the selected physical device.
+    ///
+    /// Check the documentation of [`vku::QueueFamilyInfo`](super::QueueFamilyInfo)
+    /// to know what valid means.
+    pub unsafe fn select<'a, Arr: AsRef<[super::QueueFamilyInfo<'a>]>>(
         self,
         index: usize,
-        queue_families: &[u32],
-    ) -> super::Result<super::LogicalDev<I>> {
-        super::LogicalDev::new(self.instance, self.devices[index], queue_families)
+        queue_family_infos: Arr,
+    ) -> super::Result<super::LogicalDev<'a, I, Arr>> {
+        super::LogicalDev::new(self, index, queue_family_infos)
+    }
+
+    // NOTE: this can be done because this struct doesn't have a Drop impl
+    pub fn unwrap(self) -> I {
+        self.instance
     }
 }
 
@@ -81,7 +106,7 @@ impl<I: super::InstanceHolder> PhysicalDevRef<'_, I> {
         unsafe {
             self.instance
                 .vk_instance()
-                .get_physical_device_properties(self.device)
+                .get_physical_device_properties(self.handle)
         }
     }
 
@@ -90,7 +115,7 @@ impl<I: super::InstanceHolder> PhysicalDevRef<'_, I> {
         unsafe {
             self.instance
                 .vk_instance()
-                .get_physical_device_features(self.device)
+                .get_physical_device_features(self.handle)
         }
     }
 
@@ -99,7 +124,7 @@ impl<I: super::InstanceHolder> PhysicalDevRef<'_, I> {
         unsafe {
             self.instance
                 .vk_instance()
-                .get_physical_device_queue_family_properties(self.device)
+                .get_physical_device_queue_family_properties(self.handle)
         }
     }
 }
@@ -112,7 +137,7 @@ impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
             self.instance
                 .vk_surface_fns()
                 .get_physical_device_surface_support(
-                    self.device,
+                    self.handle,
                     queue_family,
                     *self.instance.vk_surface(),
                 )?

@@ -12,6 +12,9 @@ pub use surface::{Surface, SurfaceHolder};
 pub mod debug_utils;
 pub use debug_utils::DebugUtils;
 
+pub mod queue_family;
+pub use queue_family::QueueFamilyInfo;
+
 pub mod physical_dev;
 pub use physical_dev::{PhysicalDevList, PhysicalDevRef};
 
