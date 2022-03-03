@@ -51,8 +51,8 @@ impl<'a> VulkanState<'a> {
 
         let (idx, queues): (usize, Vec<vku::QueueFamilyInfo<'_>>) = phy_devs
             .iter()
-            .filter(|dev| is_physical_device_suitable(*dev))
             .enumerate()
+            .filter(|(_, dev)| is_physical_device_suitable(*dev))
             .flat_map(|(i, dev)| {
                 QueueFamiliesIndices::get(dev)
                     .map(|indices| Some(i).zip(indices.zip()))
