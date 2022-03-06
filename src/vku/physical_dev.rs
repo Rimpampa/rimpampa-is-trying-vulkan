@@ -90,7 +90,7 @@ impl<I: super::InstanceHolder> PhysicalDevList<I> {
         self,
         index: usize,
         queue_family_infos: Arr,
-    ) -> super::Result<super::LogicalDev<'a, I, Arr>> {
+    ) -> super::Result<super::LogicalDev<I>> {
         super::LogicalDev::new(self, index, queue_family_infos)
     }
 

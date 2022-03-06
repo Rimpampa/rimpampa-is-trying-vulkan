@@ -6,13 +6,7 @@ use winit::window as win;
 
 mod vku;
 
-struct VulkanState<'a>(
-    vku::LogicalDev<
-        'static,
-        vku::Surface<'a, vku::DebugUtils<vku::Instance<'a>>>,
-        Vec<vku::QueueFamilyInfo<'static>>,
-    >,
-);
+struct VulkanState<'a>(vku::LogicalDev<vku::Surface<'a, vku::DebugUtils<vku::Instance<'a>>>>);
 
 impl<'a> VulkanState<'a> {
     fn create(entry: &'a ash::Entry, window: &'a win::Window) -> vku::Result<Self> {
@@ -53,12 +47,11 @@ impl<'a> VulkanState<'a> {
             .iter()
             .enumerate()
             .filter(|(_, dev)| is_physical_device_suitable(*dev))
-            .flat_map(|(i, dev)| {
-                QueueFamiliesIndices::get(dev)
-                    .map(|indices| Some(i).zip(indices.zip()))
-                    .transpose()
+            .map(|(i, dev)| (i, QueueFamiliesIndices::get(dev)))
+            .find_map(|(i, result)| match result {
+                Ok(indices) => indices.zip().map(|indices| Ok((i, indices))),
+                Err(e) => Some(Err(e)),
             })
-            .next()
             .expect("no suitable physical device found")?;
 
         let logic_dev = unsafe { phy_devs.select(idx, queues)? };
