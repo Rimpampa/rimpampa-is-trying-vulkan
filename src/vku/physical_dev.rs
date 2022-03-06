@@ -127,6 +127,16 @@ impl<I: super::InstanceHolder> PhysicalDevRef<'_, I> {
                 .get_physical_device_queue_family_properties(self.handle)
         }
     }
+
+    /// Returns the list of queue families supported
+    pub fn extension_properties(&self) -> super::Result<Vec<vk::ExtensionProperties>> {
+        unsafe {
+            Ok(self
+                .instance
+                .vk_instance()
+                .enumerate_device_extension_properties(self.handle)?)
+        }
+    }
 }
 
 impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
