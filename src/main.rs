@@ -63,12 +63,11 @@ impl<'a> VulkanState<'a> {
 
         let phy_devs = vku::PhysicalDevList::list(surface)?;
 
-        let (dev_idx, (infos, indices)) = phy_devs
+        let (dev_idx, indices) = phy_devs
             .iter()
             .enumerate()
             .map(|(i, dev)| -> AppResult<_> {
                 let indices = physical_device_suitability(dev, &device_extensions)?;
-                let indices = indices.and_then(|i| i.infos()).zip(indices);
                 Ok(Some(i).zip(indices))
             })
             .filter_map(Result::transpose)
@@ -76,12 +75,17 @@ impl<'a> VulkanState<'a> {
             .ok_or(AppError::NoSuitablePhyDev)
             .unwrap()?;
 
-        let logic_dev = unsafe { phy_devs.select(dev_idx, infos)? };
+        let logic_dev = unsafe { phy_devs.select(dev_idx, indices.infos())? };
 
         Ok(Self(logic_dev))
     }
 }
 
+/// Checks if the physical device has the right properties for the application
+///
+/// # Return
+///
+/// The queues families indices of the needed queue families if all present
 fn physical_device_suitability<I: vku::SurfaceHolder>(
     dev: vku::PhysicalDevRef<I>,
     dev_exts: &[&ffi::CStr],
@@ -109,31 +113,33 @@ fn physical_device_suitability<I: vku::SurfaceHolder>(
         return Ok(None);
     }
 
-    Ok(Some(QueueFamiliesIndices::get(dev)?))
+    Ok(QueueFamiliesIndices::get(dev))
 }
 
 #[derive(Clone, Copy)]
 struct QueueFamiliesIndices {
-    graphics: Option<u32>,
-    present: Option<u32>,
+    graphics: u32,
+    present: u32,
 }
 
 impl QueueFamiliesIndices {
-    fn get<I: vku::SurfaceHolder>(dev: vku::PhysicalDevRef<I>) -> vku::Result<Self> {
+    /// Returns the queue families indices needed by the application,
+    /// or [None] if they are not supported
+    fn get<I: vku::SurfaceHolder>(dev: vku::PhysicalDevRef<I>) -> Option<Self> {
         let queue_families = dev.queue_families();
         let graphics = queue_families
             .iter()
-            .position(|fam| fam.queue_flags.contains(vk::QueueFlags::GRAPHICS))
-            .map(|v| v as u32);
+            .position(|fam| fam.queue_flags.contains(vk::QueueFlags::GRAPHICS))?
+            as u32;
         let present = (0..queue_families.len())
-            .map(|fam| dev.supports_surface(fam as u32).unwrap())
-            .position(convert::identity)
-            .map(|v| v as u32);
-        Ok(Self { graphics, present })
+            .find(|&fam| dev.supports_surface(fam as u32).unwrap_or(false))?
+            as u32;
+        Some(Self { graphics, present })
     }
 
-    fn infos(self) -> Option<Vec<vku::QueueFamilyInfo<'static>>> {
-        let arr = [self.graphics?, self.present?];
+    /// Returns the info needed for creating the queues
+    fn infos(self) -> Vec<vku::QueueFamilyInfo<'static>> {
+        let arr = [self.graphics, self.present];
         let mut vec = Vec::<vku::QueueFamilyInfo>::with_capacity(arr.len());
         arr.into_iter().for_each(|n| {
             if vec.iter().any(|i| i.index == n) {
@@ -144,7 +150,7 @@ impl QueueFamiliesIndices {
                 priorities: &[1.0],
             })
         });
-        Some(vec)
+        vec
     }
 }
 
