@@ -141,7 +141,11 @@ impl<I: super::InstanceHolder> PhysicalDevRef<'_, I> {
 impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
     /// Returns whether or not the [`vku::Surface`](super::Surface) bound to the
     /// current instance is supported by this physical device and queue family
-    pub fn supports_surface(&self, queue_family_index: u32) -> super::Result<bool> {
+    /// 
+    /// # Safety
+    /// 
+    /// `queue_family_index` must be a valid queue family index for this physical device
+    pub unsafe fn supports_surface(&self, queue_family_index: u32) -> super::Result<bool> {
         Ok(unsafe {
             self.instance
                 .vk_surface_fns()

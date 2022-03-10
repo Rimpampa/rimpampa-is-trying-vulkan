@@ -132,7 +132,11 @@ impl QueueFamiliesIndices {
             .position(|fam| fam.queue_flags.contains(vk::QueueFlags::GRAPHICS))?
             as u32;
         let present = (0..queue_families.len())
-            .find(|&fam| dev.supports_surface(fam as u32).unwrap_or(false))?
+            // SAFETY
+            //
+            // The range is based on the length of the Vec returned by `queue_families`
+            // and the same device is being used
+            .find(|&fam| unsafe { dev.supports_surface(fam as u32).unwrap_or(false) })?
             as u32;
         Some(Self { graphics, present })
     }
