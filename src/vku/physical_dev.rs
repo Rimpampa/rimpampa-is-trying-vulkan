@@ -131,10 +131,9 @@ impl<I: super::InstanceHolder> PhysicalDevRef<'_, I> {
     /// Returns the list of queue families supported
     pub fn extension_properties(&self) -> super::Result<Vec<vk::ExtensionProperties>> {
         unsafe {
-            Ok(self
-                .instance
+            self.instance
                 .vk_instance()
-                .enumerate_device_extension_properties(self.handle)?)
+                .enumerate_device_extension_properties(self.handle)
         }
     }
 }
@@ -142,13 +141,13 @@ impl<I: super::InstanceHolder> PhysicalDevRef<'_, I> {
 impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
     /// Returns whether or not the [`vku::Surface`](super::Surface) bound to the
     /// current instance is supported by this physical device and queue family
-    pub fn supports_surface(&self, queue_family: u32) -> super::Result<bool> {
+    pub fn supports_surface(&self, queue_family_index: u32) -> super::Result<bool> {
         Ok(unsafe {
             self.instance
                 .vk_surface_fns()
                 .get_physical_device_surface_support(
                     self.handle,
-                    queue_family,
+                    queue_family_index,
                     *self.instance.vk_surface(),
                 )?
         })
