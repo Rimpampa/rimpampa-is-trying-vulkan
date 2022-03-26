@@ -1,3 +1,5 @@
+use std::os::raw::c_char;
+
 use ash::vk;
 
 /// A wrapper around all the necessary state needed to hold a Vulkan logical device.
@@ -32,6 +34,7 @@ impl<I: super::InstanceHolder> LogicalDev<I> {
         dev_list: super::PhysicalDevList<I>,
         selected_dev: usize,
         queue_family_infos: impl AsRef<[super::QueueFamilyInfo<'a>]>,
+        extensions: &[*const c_char],
     ) -> super::Result<Self> {
         // Can't have a device with zero queues enabled
         debug_assert!(!queue_family_infos.as_ref().is_empty());
@@ -50,6 +53,7 @@ impl<I: super::InstanceHolder> LogicalDev<I> {
 
         let create_info = vk::DeviceCreateInfo::builder()
             .queue_create_infos(&queue_create_infos)
+            .enabled_extension_names(&extensions)
             .build();
 
         let phydev = dev_list.get(selected_dev).unwrap().handle;

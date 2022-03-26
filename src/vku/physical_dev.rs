@@ -1,4 +1,6 @@
-use ash::vk;
+use std::os::raw::c_char;
+
+use ash::{extensions::khr, vk};
 
 /// A list of Vulkan physical device handles
 ///
@@ -90,8 +92,9 @@ impl<I: super::InstanceHolder> PhysicalDevList<I> {
         self,
         index: usize,
         queue_family_infos: Arr,
+        extensions: &[*const c_char],
     ) -> super::Result<super::LogicalDev<I>> {
-        super::LogicalDev::new(self, index, queue_family_infos)
+        super::LogicalDev::new(self, index, queue_family_infos, extensions)
     }
 
     // NOTE: this can be done because this struct doesn't have a Drop impl
@@ -139,21 +142,48 @@ impl<I: super::InstanceHolder> PhysicalDevRef<'_, I> {
 }
 
 impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
+    fn vk_surface(&self) -> (&khr::Surface, &vk::SurfaceKHR) {
+        (self.instance.vk_surface_fns(), self.instance.vk_surface())
+    }
+
     /// Returns whether or not the [`vku::Surface`](super::Surface) bound to the
     /// current instance is supported by this physical device and queue family
-    /// 
+    ///
     /// # Safety
-    /// 
+    ///
     /// `queue_family_index` must be a valid queue family index for this physical device
     pub unsafe fn supports_surface(&self, queue_family_index: u32) -> super::Result<bool> {
-        Ok(unsafe {
-            self.instance
-                .vk_surface_fns()
-                .get_physical_device_surface_support(
-                    self.handle,
-                    queue_family_index,
-                    *self.instance.vk_surface(),
-                )?
-        })
+        let (fns, surface) = self.vk_surface();
+        fns.get_physical_device_surface_support(self.handle, queue_family_index, *surface)
+    }
+
+    /// Returns the capabilities that this devices has for the surface
+    ///
+    /// # Safety
+    ///
+    /// The device must support the `VK_KHR_swapchain` device extension
+    pub unsafe fn surface_capabilities(&self) -> super::Result<vk::SurfaceCapabilitiesKHR> {
+        let (fns, surface) = self.vk_surface();
+        fns.get_physical_device_surface_capabilities(self.handle, *surface)
+    }
+
+    /// Returns the supported color formats by this devices for the surface
+    ///
+    /// # Safety
+    ///
+    /// The device must support the `VK_KHR_swapchain` device extension
+    pub unsafe fn surface_formats(&self) -> super::Result<Vec<vk::SurfaceFormatKHR>> {
+        let (fns, surface) = self.vk_surface();
+        fns.get_physical_device_surface_formats(self.handle, *surface)
+    }
+
+    /// Returns the supported present modes by this devices for the surface
+    ///
+    /// # Safety
+    ///
+    /// The device must support the `VK_KHR_swapchain` device extension
+    pub unsafe fn surface_present_modes(&self) -> super::Result<Vec<vk::PresentModeKHR>> {
+        let (fns, surface) = self.vk_surface();
+        fns.get_physical_device_surface_present_modes(self.handle, *surface)
     }
 }
