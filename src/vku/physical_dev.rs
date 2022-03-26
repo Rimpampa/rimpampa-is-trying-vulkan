@@ -50,14 +50,6 @@ impl<I: super::InstanceHolder> PhysicalDevList<I> {
         Ok(Self { instance, devices })
     }
 
-    /// Returns a reference to the physical device handle at `index`
-    pub fn get(&self, index: usize) -> Option<PhysicalDevRef<'_, I>> {
-        Some(PhysicalDevRef {
-            instance: &self.instance,
-            handle: *self.devices.get(index)?,
-        })
-    }
-
     /// Returns an iterator over all the physical device handles
     pub fn iter(&self) -> impl Iterator<Item = PhysicalDevRef<'_, I>> {
         self.devices.iter().map(|&device| PhysicalDevRef {
@@ -86,20 +78,44 @@ impl<I: super::InstanceHolder> PhysicalDevList<I> {
     ///
     /// `queue_family_infos` must be valid for the selected physical device.
     ///
+    /// `extensions` must contain pointers to null terminated strings,
+    /// it should be considered as a slice of [`&CStr`](std::ffi::CStr)
+    ///
     /// Check the documentation of [`vku::QueueFamilyInfo`](super::QueueFamilyInfo)
     /// to know what valid means.
     pub unsafe fn select<'a, Arr: AsRef<[super::QueueFamilyInfo<'a>]>>(
         self,
-        index: usize,
+        selected_dev: usize,
         queue_family_infos: Arr,
         extensions: &[*const c_char],
     ) -> super::Result<super::LogicalDev<I>> {
-        super::LogicalDev::new(self, index, queue_family_infos, extensions)
-    }
+        // Can't have a device with zero queues enabled
+        debug_assert!(!queue_family_infos.as_ref().is_empty());
+        // Can't create two separate queues of the same family
+        debug_assert!(std::iter::successors(
+            queue_family_infos.as_ref().split_first(),
+            |(_, s)| s.split_first()
+        )
+        .all(|(f, r)| !r.iter().any(|r| r.index == f.index)));
 
-    // NOTE: this can be done because this struct doesn't have a Drop impl
-    pub fn unwrap(self) -> I {
-        self.instance
+        let queue_create_infos: Vec<_> = queue_family_infos
+            .as_ref()
+            .iter()
+            .map(|&info| info.create_info())
+            .collect();
+
+        let create_info = vk::DeviceCreateInfo::builder()
+            .queue_create_infos(&queue_create_infos)
+            .enabled_extension_names(extensions)
+            .build();
+
+        let phydev = *self.devices.get(selected_dev).unwrap();
+        let device = self
+            .instance
+            .vk_instance()
+            .create_device(phydev, &create_info, None)?;
+
+        Ok(super::LogicalDev::new(self.instance, device))
     }
 }
 
