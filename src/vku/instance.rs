@@ -1,6 +1,6 @@
 use ash::vk;
 use cstr::cstr;
-use std::{ffi, os::raw};
+use std::{ffi::CStr, os::raw};
 
 /// A wrapper around all the necessary state needed to hold a Vulkan instance.
 ///
@@ -25,12 +25,12 @@ impl<'a> Instance<'a> {
     /// # Safety
     ///
     /// `validation_layers_names` and `extensions_names` must contain pointers to null-terminated strings,
-    /// they should be considered as [slice](std::slice)s of [`&CStr`](ffi::CStr)
+    /// they should be considered as [slice](std::slice)s of [`&CStr`](CStr)
     pub unsafe fn new(
         entry: &'a ash::Entry,
         validation_layers_names: &[*const raw::c_char],
         extensions_names: &[*const raw::c_char],
-        app_name: &ffi::CStr,
+        app_name: &CStr,
     ) -> super::Result<Self> {
         let app_info = vk::ApplicationInfo::builder()
             .application_name(app_name)

@@ -1,11 +1,11 @@
-use std::{ffi::CStr, marker};
+use std::{ffi::CStr, marker::PhantomData};
 
 use ash::{extensions::khr, vk};
 use raw_window_handle as rwh;
 
 /// Returns the names of the Vulkan extensions required by the provided window handle
 pub fn extensions(window: &dyn rwh::HasRawWindowHandle) -> super::Result<Vec<&'static CStr>> {
-    Ok(ash_window::enumerate_required_extensions(window)?)
+    ash_window::enumerate_required_extensions(window)
 }
 
 /// A wrapper around all the necessary state needed to hold a Vulkan surface
@@ -24,7 +24,7 @@ pub struct Surface<'a, I: super::InstanceHolder> {
     /// - more specifically the lifetime bound to it -
     /// to stop the actual window object from being dropped before this value
     /// without requiring any space to store the actual ref
-    window: marker::PhantomData<&'a dyn rwh::HasRawWindowHandle>,
+    window: PhantomData<&'a dyn rwh::HasRawWindowHandle>,
 }
 
 impl<'a, I: super::InstanceHolder> Surface<'a, I> {
@@ -39,7 +39,7 @@ impl<'a, I: super::InstanceHolder> Surface<'a, I> {
         Ok(Self {
             surface,
             fns: khr::Surface::new(instance.vk_entry(), instance.vk_instance()),
-            window: marker::PhantomData,
+            window: PhantomData,
             instance,
         })
     }
