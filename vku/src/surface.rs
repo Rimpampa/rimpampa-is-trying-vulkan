@@ -118,8 +118,8 @@ macro_rules! derive_surface_holder {
             // Additional generics, note the comma before closing the optional block
             $( $( $generics )* , )?
             // SurfaceHolder generic
-            $generic : $crate::vku::SurfaceHolder
-        > $crate::vku::surface::pvt::SurfaceHolder for $self {
+            $generic : $crate::SurfaceHolder
+        > $crate::surface::pvt::SurfaceHolder for $self {
             fn vk_surface_fns(&self) -> &ash::extensions::khr::Surface {
                 self.$field.vk_surface_fns()
             }

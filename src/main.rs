@@ -5,8 +5,6 @@ use ash::vk;
 use cstr::cstr;
 use winit::window as win;
 
-mod vku;
-
 #[derive(Clone, Copy, Debug, thiserror::Error)]
 enum AppError {
     /// An error directly returned by a Vulkan function

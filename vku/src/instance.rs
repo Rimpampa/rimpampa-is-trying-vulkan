@@ -126,8 +126,8 @@ macro_rules! derive_instance_holder {
             // Additional generics, note the comma before closing the optional block
             $( $( $generics )* , )?
             // InstanceHodler generic
-            $generic : $crate::vku::InstanceHolder
-        > $crate::vku::instance::pvt::InstanceHolder for $self {
+            $generic : $crate::InstanceHolder
+        > $crate::instance::pvt::InstanceHolder for $self {
             fn vk_instance(&self) -> &ash::Instance {
                 self.$field.vk_instance()
             }
