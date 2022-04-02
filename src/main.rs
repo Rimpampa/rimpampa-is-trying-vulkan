@@ -227,7 +227,7 @@ impl VkCreateInfo {
     }
 
     /// Returns the info needed for creating the queues
-    fn queue_family_creation_infos(self) -> Vec<vku::QueueFamilyInfo<'static>> {
+    fn queue_family_creation_infos(self) -> Vec<vku::QueueFamilyInfo> {
         let arr = [self.graphics_queue_id, self.present_queue_id];
         let mut vec = Vec::<vku::QueueFamilyInfo>::with_capacity(arr.len());
         arr.into_iter().for_each(|n| {
@@ -236,7 +236,7 @@ impl VkCreateInfo {
             }
             vec.push(vku::QueueFamilyInfo {
                 index: n,
-                priorities: &[1.0],
+                priorities: vec![1.0],
             })
         });
         vec

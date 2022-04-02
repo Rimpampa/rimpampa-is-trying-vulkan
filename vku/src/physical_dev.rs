@@ -83,26 +83,22 @@ impl<I: super::InstanceHolder> PhysicalDevList<I> {
     ///
     /// Check the documentation of [`vku::QueueFamilyInfo`](super::QueueFamilyInfo)
     /// to know what valid means.
-    pub unsafe fn select<'a, Arr: AsRef<[super::QueueFamilyInfo<'a>]>>(
+    pub unsafe fn select(
         self,
         selected_dev: usize,
-        queue_family_infos: Arr,
+        queue_family_infos: Vec<super::QueueFamilyInfo>,
         extensions: &[*const c_char],
     ) -> super::Result<super::LogicalDev<I>> {
         // Can't have a device with zero queues enabled
-        debug_assert!(!queue_family_infos.as_ref().is_empty());
+        debug_assert!(!queue_family_infos.is_empty());
         // Can't create two separate queues of the same family
-        debug_assert!(std::iter::successors(
-            queue_family_infos.as_ref().split_first(),
-            |(_, s)| s.split_first()
-        )
-        .all(|(f, r)| !r.iter().any(|r| r.index == f.index)));
+        debug_assert!(
+            std::iter::successors(queue_family_infos.split_first(), |(_, s)| s.split_first())
+                .all(|(f, r)| !r.iter().any(|r| r.index == f.index))
+        );
 
-        let queue_create_infos: Vec<_> = queue_family_infos
-            .as_ref()
-            .iter()
-            .map(|&info| info.create_info())
-            .collect();
+        let queue_create_infos: Vec<_> =
+            queue_family_infos.iter().map(|i| i.create_info()).collect();
 
         let create_info = vk::DeviceCreateInfo::builder()
             .queue_create_infos(&queue_create_infos)
@@ -120,40 +116,32 @@ impl<I: super::InstanceHolder> PhysicalDevList<I> {
 }
 
 impl<I: super::InstanceHolder> PhysicalDevRef<'_, I> {
+    fn vk_instance(&self) -> &ash::Instance {
+        self.instance.vk_instance()
+    }
+
     /// Returns the properties of this physical device
     pub fn properties(&self) -> vk::PhysicalDeviceProperties {
-        unsafe {
-            self.instance
-                .vk_instance()
-                .get_physical_device_properties(self.handle)
-        }
+        let i = self.vk_instance();
+        unsafe { i.get_physical_device_properties(self.handle) }
     }
 
     /// Returns the features of this physical device
     pub fn features(&self) -> vk::PhysicalDeviceFeatures {
-        unsafe {
-            self.instance
-                .vk_instance()
-                .get_physical_device_features(self.handle)
-        }
+        let i = self.vk_instance();
+        unsafe { i.get_physical_device_features(self.handle) }
     }
 
     /// Returns the list of queue families supported
     pub fn queue_families(&self) -> Vec<vk::QueueFamilyProperties> {
-        unsafe {
-            self.instance
-                .vk_instance()
-                .get_physical_device_queue_family_properties(self.handle)
-        }
+        let i = self.vk_instance();
+        unsafe { i.get_physical_device_queue_family_properties(self.handle) }
     }
 
     /// Returns the list of queue families supported
     pub fn extension_properties(&self) -> super::Result<Vec<vk::ExtensionProperties>> {
-        unsafe {
-            self.instance
-                .vk_instance()
-                .enumerate_device_extension_properties(self.handle)
-        }
+        let i = self.vk_instance();
+        unsafe { i.enumerate_device_extension_properties(self.handle) }
     }
 }
 
