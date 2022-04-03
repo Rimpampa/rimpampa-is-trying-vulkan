@@ -38,3 +38,66 @@ impl<I: super::InstanceHolder> Drop for LogicalDev<I> {
 
 derive_instance_holder!(LogicalDev<I> = instance: I);
 derive_surface_holder!(LogicalDev<I> = instance: I);
+
+/// Private definitions available only to the [vku](super) module
+pub(super) mod pvt {
+    /// Private definition of [`vku::DeviceHolder`](super::DeviceHolder)
+    /// that allows to hide those methods from the public interface.
+    ///
+    /// Refer to the [`vku::DeviceHolder`](super::DeviceHolder) for the trait documentation.
+    pub trait DeviceHolder {
+        /// Returns a reference to the underlying [`vk::Device`](ash::vk::Device)
+        fn vk_device(&self) -> &ash::Device;
+    }
+}
+
+/// An [`vku::DeviceHolder`](DeviceHolder) is a type
+/// that can access an [`vku::LogicalDev`](LogicalDev) either directly or
+/// through another [`vku::DeviceHolder`](DeviceHolder)
+pub trait DeviceHolder: pvt::DeviceHolder {}
+impl<T: pvt::DeviceHolder> DeviceHolder for T {}
+
+impl<I: super::InstanceHolder> pvt::DeviceHolder for LogicalDev<I> {
+    fn vk_device(&self) -> &ash::Device {
+        &self.device
+    }
+}
+
+/// Implements the [`DeviceHolder`] in a transitive way by defining the methods
+/// using a field of the struct that already implements them
+///
+/// The `#[generics(...)]` meta-like attribute can be added before everything to declare
+/// additional generics (either lifetimes or types).
+///
+/// # Example
+///
+/// Derive the trait on a wrapper type
+/// ```
+/// struct DeviceWrapper<I: DeviceHolder>(I);
+///
+/// derive_instance_holder!(DeviceWrapper<I> = 0: I);
+/// ```
+///
+/// Derive the trait on a wrapper type that has additional generics
+/// ```
+/// struct DeviceWrapper<'a, I: DeviceHolder>(&'a I);
+///
+/// derive_device_holder!(
+///     #[generics('a)]
+///     DeviceWrapper<'a, I> = 0: I
+/// );
+/// ```
+macro_rules! derive_device_holder {
+    ( $( #[generics( $( $generics:tt )* )] )? $self:ty = $field:tt : $generic:ident) => {
+        impl<
+            // Additional generics, note the comma before closing the optional block
+            $( $( $generics )* , )?
+            // InstanceHodler generic
+            $generic : $crate::DeviceHolder
+        > $crate::instance::pvt::DeviceHolder for $self {
+            fn vk_device(&self) -> &ash::Device {
+                self.$field.vk_device()
+            }
+        }
+    };
+}

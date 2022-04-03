@@ -17,7 +17,9 @@ enum AppError {
 
 type AppResult<T> = Result<T, AppError>;
 
-struct VulkanState<'a>(vku::LogicalDev<vku::Surface<'a, vku::DebugUtils<vku::Instance<'a>>>>);
+struct VulkanState<'a>(
+    vku::Swapchain<vku::LogicalDev<vku::Surface<'a, vku::DebugUtils<vku::Instance<'a>>>>>,
+);
 
 impl<'a> VulkanState<'a> {
     fn create(entry: &'a ash::Entry, window: &'a win::Window) -> AppResult<Self> {
@@ -76,7 +78,26 @@ impl<'a> VulkanState<'a> {
         let dev_exts_ptr: Vec<_> = device_extensions.iter().map(|s| s.as_ptr()).collect();
         let logic_dev = unsafe { phy_devs.select(dev_idx, queue_create_info, &dev_exts_ptr)? };
 
-        Ok(Self(logic_dev))
+        let sharing = if create_info.present_queue_id == create_info.graphics_queue_id {
+            vku::swapchain::ImageSharing::Exclusive
+        } else {
+            vku::swapchain::ImageSharing::Concurrent(vec![
+                create_info.present_queue_id,
+                create_info.graphics_queue_id,
+            ])
+        };
+        let img_details = vku::swapchain::ImageDetails {
+            count: create_info.swapchain_imgs,
+            format: create_info.swapchain_fmt.format,
+            color_space: create_info.swapchain_fmt.color_space,
+            extent: create_info.swapchain_extent,
+            sharing,
+            transform: create_info.swapchain_transform,
+            present_mode: create_info.swapchain_pmode,
+        };
+        let swapchain = unsafe { vku::Swapchain::new(logic_dev, img_details)? };
+
+        Ok(Self(swapchain))
     }
 }
 
@@ -94,6 +115,8 @@ struct VkCreateInfo {
     swapchain_extent: vk::Extent2D,
     /// The chosen swapchain image count
     swapchain_imgs: u32,
+    /// The default swapchain image transform
+    swapchain_transform: vk::SurfaceTransformFlagsKHR,
 }
 
 impl VkCreateInfo {
@@ -198,6 +221,7 @@ impl VkCreateInfo {
             swapchain_pmode: pmode,
             swapchain_extent: extent,
             swapchain_imgs: imgs,
+            swapchain_transform: caps.current_transform,
             ..self
         })
     }

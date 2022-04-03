@@ -19,4 +19,7 @@ pub mod physical_dev;
 pub use physical_dev::{PhysicalDevList, PhysicalDevRef};
 
 pub mod logical_dev;
-pub use logical_dev::LogicalDev;
+pub use logical_dev::{DeviceHolder, LogicalDev};
+
+pub mod swapchain;
+pub use swapchain::Swapchain;
