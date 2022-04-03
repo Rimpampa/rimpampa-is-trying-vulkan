@@ -83,6 +83,10 @@ impl<I: super::InstanceHolder> PhysicalDevList<I> {
     ///
     /// Check the documentation of [`vku::QueueFamilyInfo`](super::QueueFamilyInfo)
     /// to know what valid means.
+    ///
+    /// `extensions` must not contain `"VK_AMD_negative_viewport_height"`
+    ///
+    /// `extensions` must not contain both `"VK_KHR_buffer_device_address"` and `"VK_EXT_buffer_device_address"`
     pub unsafe fn select(
         self,
         selected_dev: usize,
@@ -155,7 +159,8 @@ impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
     ///
     /// # Safety
     ///
-    /// `queue_family_index` must be a valid queue family index for this physical device
+    /// `queue_family_index` must be a valid index in the [`Vec`] of available queue families
+    /// for this device returned by [`queue_families`](PhysicalDevRef)
     pub unsafe fn supports_surface(&self, queue_family_index: u32) -> super::Result<bool> {
         let (fns, surface) = self.vk_surface();
         fns.get_physical_device_surface_support(self.handle, queue_family_index, *surface)
@@ -165,7 +170,8 @@ impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
     ///
     /// # Safety
     ///
-    /// The device must support the `VK_KHR_swapchain` device extension
+    /// The device must support the surface,
+    /// check the [`supports_surface`](PhysicalDevRef) method
     pub unsafe fn surface_capabilities(&self) -> super::Result<vk::SurfaceCapabilitiesKHR> {
         let (fns, surface) = self.vk_surface();
         fns.get_physical_device_surface_capabilities(self.handle, *surface)
@@ -175,7 +181,8 @@ impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
     ///
     /// # Safety
     ///
-    /// The device must support the `VK_KHR_swapchain` device extension
+    /// The device must support the surface,
+    /// check the [`supports_surface`](PhysicalDevRef) method
     pub unsafe fn surface_formats(&self) -> super::Result<Vec<vk::SurfaceFormatKHR>> {
         let (fns, surface) = self.vk_surface();
         fns.get_physical_device_surface_formats(self.handle, *surface)
@@ -185,7 +192,8 @@ impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
     ///
     /// # Safety
     ///
-    /// The device must support the `VK_KHR_swapchain` device extension
+    /// The device must support the surface,
+    /// check the [`supports_surface`](PhysicalDevRef) method
     pub unsafe fn surface_present_modes(&self) -> super::Result<Vec<vk::PresentModeKHR>> {
         let (fns, surface) = self.vk_surface();
         fns.get_physical_device_surface_present_modes(self.handle, *surface)
