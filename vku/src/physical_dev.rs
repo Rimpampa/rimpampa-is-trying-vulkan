@@ -160,7 +160,7 @@ impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
     /// # Safety
     ///
     /// `queue_family_index` must be a valid index in the [`Vec`] of available queue families
-    /// for this device returned by [`queue_families`](PhysicalDevRef)
+    /// for this device returned by [`queue_families`](Self::queue_families)
     pub unsafe fn supports_surface(&self, queue_family_index: u32) -> super::Result<bool> {
         let (fns, surface) = self.vk_surface();
         fns.get_physical_device_surface_support(self.handle, queue_family_index, *surface)
@@ -171,7 +171,7 @@ impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
     /// # Safety
     ///
     /// The device must support the surface,
-    /// check the [`supports_surface`](PhysicalDevRef) method
+    /// check the [`supports_surface`](Self::supports_surface) method
     pub unsafe fn surface_capabilities(&self) -> super::Result<vk::SurfaceCapabilitiesKHR> {
         let (fns, surface) = self.vk_surface();
         fns.get_physical_device_surface_capabilities(self.handle, *surface)
@@ -182,7 +182,7 @@ impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
     /// # Safety
     ///
     /// The device must support the surface,
-    /// check the [`supports_surface`](PhysicalDevRef) method
+    /// check the [`supports_surface`](Self::supports_surface) method
     pub unsafe fn surface_formats(&self) -> super::Result<Vec<vk::SurfaceFormatKHR>> {
         let (fns, surface) = self.vk_surface();
         fns.get_physical_device_surface_formats(self.handle, *surface)
@@ -193,7 +193,7 @@ impl<I: super::SurfaceHolder> PhysicalDevRef<'_, I> {
     /// # Safety
     ///
     /// The device must support the surface,
-    /// check the [`supports_surface`](PhysicalDevRef) method
+    /// check the [`supports_surface`](Self::supports_surface) method
     pub unsafe fn surface_present_modes(&self) -> super::Result<Vec<vk::PresentModeKHR>> {
         let (fns, surface) = self.vk_surface();
         fns.get_physical_device_surface_present_modes(self.handle, *surface)

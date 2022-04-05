@@ -1,3 +1,6 @@
+#[allow(unused_imports)]
+use crate as vku; // <--- Used in docs
+
 use ash::{extensions::khr, vk};
 
 /// How the image is to be shared between all the queue families
@@ -57,46 +60,47 @@ impl<I: super::SurfaceHolder + super::DeviceHolder> Swapchain<I> {
     /// Regarding the values of the fields in `details`:
     ///
     /// - `surface` must be a surface that is supported by the device as determined using
-    ///   [`vku::PhysicalDevRef::supports_surface`](super::PhysicalDevRef)
+    ///   [`vku::PhysicalDevRef::supports_surface`]
     ///
     /// - `count` must be less than or equal to the value returned in the `max_image_count` member of the
     ///   [`vk::SurfaceCapabilitiesKHR`] structure returned by
-    ///   [`vku::PhysicalDevRef::surface_capabilities`](super::PhysicalDevRef)
+    ///   [`vku::PhysicalDevRef::surface_capabilities`]
     ///   for the surface if the returned `max_image_count` is not zero
     ///
     /// - if `present_mode` is not
-    ///   [`vk::PresentModeKHR::SHARED_DEMAND_REFRESH`](vk::PresentModeKHR) nor
-    ///   [`vk::PresentModeKHR::SHARED_CONTINUOUS_REFRESH`](vk::PresentModeKHR),
+    ///   [`vk::PresentModeKHR::SHARED_DEMAND_REFRESH`] nor
+    ///   [`vk::PresentModeKHR::SHARED_CONTINUOUS_REFRESH`],
     ///   then `count` must be greater than or equal to the value returned in the `min_image_count` member of the
     ///   [`vk::SurfaceCapabilitiesKHR`] structure returned by
-    ///   [`vku::PhysicalDevRef::surface_capabilities`](super::PhysicalDevRef) for the surface
+    ///   [`vku::PhysicalDevRef::surface_capabilities`] for the surface
     ///
     /// - if `present_mode` is not
-    ///   [`vk::PresentModeKHR::SHARED_DEMAND_REFRESH`](vk::PresentModeKHR) nor
-    ///   [`vk::PresentModeKHR::SHARED_CONTINUOUS_REFRESH`](vk::PresentModeKHR),
+    ///   [`vk::PresentModeKHR::SHARED_DEMAND_REFRESH`] nor
+    ///   [`vk::PresentModeKHR::SHARED_CONTINUOUS_REFRESH`],
     ///   then `count` must be `1`
     ///
     /// - `format` and `color_space` must match the `format` and `color_cpace` members, respectively,
     ///   of one of the [`vk::SurfaceFormatKHR`] structures returned by
-    ///   [`vku::PhysicalDevRef::surface_formats`](super::PhysicalDevRef) for the surface
+    ///   [`vku::PhysicalDevRef::surface_formats`] for the surface
     ///
     /// - `extent` must be between `min_image_extent` and `max_image_extent`, inclusive,
     ///   of the [`vk::SurfaceCapabilitiesKHR`] structure returned by
-    ///   [`vku::PhysicalDevRef::surface_capabilities`](super::PhysicalDevRef) for the surface
+    ///   [`vku::PhysicalDevRef::surface_capabilities`] for the surface
     ///
     /// - `extent` members `width` and `height` must both be non-zero
     ///
     /// - if `sharing` is [`ImageSharing::Concurrent`], the length of the [`Vec`] must be greater than `1`
     ///
-    /// - if `sharing` is [`ImageSharing::Concurrent`], each element of the [`Vec`] must be unique and must be less than the number
-    ///   of elemenets returned by [`vku::PhysicalDevRef::queue_families`](super::PhysicalDevRef) of the selected device
+    /// - if `sharing` is [`ImageSharing::Concurrent`], each element of the [`Vec`] must be unique
+    ///   and must be less than the number of elemenets returned by
+    ///   [`vku::PhysicalDevRef::queue_families`] of the selected device
     ///
     /// - `transform` must be one of the bits present in the `supported_transforms` member of the
     ///    [`vk::SurfaceCapabilitiesKHR`] structure returned by
-    ///    [`vku::PhysicalDevRef::surface_capabilities`](super::PhysicalDevRef) for the surface
+    ///    [`vku::PhysicalDevRef::surface_capabilities`] for the surface
     ///
     /// - `present_mode` must be one of the [`vk::PresentModeKHR`] values returned by
-    ///   [`vku::PhysicalDevRef::surface_present_modes`](super::PhysicalDevRef) for the surface
+    ///   [`vku::PhysicalDevRef::surface_present_modes`] for the surface
     pub unsafe fn new(instance: I, details: ImageDetails) -> super::Result<Self> {
         let fns = khr::Swapchain::new(instance.vk_instance(), instance.vk_device());
 

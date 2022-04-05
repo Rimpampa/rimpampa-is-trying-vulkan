@@ -1,3 +1,6 @@
+#[allow(unused_imports)]
+use crate as vku; // <--- Used in docs
+
 use ash::vk;
 
 /// Information abount a queue family
@@ -5,7 +8,7 @@ use ash::vk;
 /// # Validity
 ///
 /// The validity depends on the physical device it refers to and consists of this checks:
-/// - `index` must be lower than the lenght of [`queue_families`] of [`vku::PhysicalDevRef`](super::PhysicalDevRef)
+/// - `index` must be lower than the length of [`vku::PhysicalDevRef::queue_families`]
 /// - the length of `priorities` must be lower than the `queue_count` for the queue at `index`
 /// - the values in `priorities` must sum up to `1.0`
 #[derive(Clone)]
