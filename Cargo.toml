@@ -7,11 +7,11 @@ version = "0.1.0"
 members = ["vku"]
 
 [dependencies]
-ash = "0.36.0"
-cstr = "0.2.9"
-raw-window-handle = "0.3.4"
-winit = "0.26.1"
-thiserror = "1.0.30"
+ash = "0.37"
+cstr = "0.2"
+raw-window-handle = "0.5"
+winit = "0.28"
+thiserror = "1.0"
 
 [dependencies.vku]
 path = "vku"

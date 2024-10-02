@@ -1,10 +1,10 @@
-use std::{ffi::CStr, marker::PhantomData};
+use std::marker::PhantomData;
 
 use ash::{extensions::khr, vk};
 use raw_window_handle as rwh;
 
 /// Returns the names of the Vulkan extensions required by the provided window handle
-pub fn extensions(window: &dyn rwh::HasRawWindowHandle) -> super::Result<Vec<&'static CStr>> {
+pub fn extensions(window: rwh::RawDisplayHandle) -> super::Result<&'static [*const i8]> {
     ash_window::enumerate_required_extensions(window)
 }
 
@@ -32,9 +32,19 @@ impl<'a, I: super::InstanceHolder> Surface<'a, I> {
     ///
     /// The instance should be created with all the necessary extensions,
     /// check the [`extensions`] function to know which are needed.
-    pub fn new(instance: I, window: &'a dyn rwh::HasRawWindowHandle) -> super::Result<Self> {
+    pub fn new(
+        instance: I,
+        display: rwh::RawDisplayHandle,
+        window: rwh::RawWindowHandle,
+    ) -> super::Result<Self> {
         let surface = unsafe {
-            ash_window::create_surface(instance.vk_entry(), instance.vk_instance(), window, None)
+            ash_window::create_surface(
+                instance.vk_entry(),
+                instance.vk_instance(),
+                display,
+                window,
+                None,
+            )
         }?;
         Ok(Self {
             surface,

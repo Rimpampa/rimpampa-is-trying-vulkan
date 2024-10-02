@@ -39,12 +39,12 @@ unsafe extern "system" fn vk_debug_callback(
 pub fn create_info() -> vk::DebugUtilsMessengerCreateInfoEXT {
     vk::DebugUtilsMessengerCreateInfoEXT::builder()
         .message_severity({
-            use vk::DebugUtilsMessageSeverityFlagsEXT as flag;
-            flag::WARNING | flag::INFO | flag::VERBOSE | flag::ERROR
+            use vk::DebugUtilsMessageSeverityFlagsEXT as Sev;
+            Sev::WARNING | Sev::INFO | Sev::VERBOSE | Sev::ERROR
         })
         .message_type({
-            use vk::DebugUtilsMessageTypeFlagsEXT as flag;
-            flag::VALIDATION | flag::PERFORMANCE | flag::GENERAL
+            use vk::DebugUtilsMessageTypeFlagsEXT as Ty;
+            Ty::VALIDATION | Ty::PERFORMANCE | Ty::GENERAL
         })
         .pfn_user_callback(Some(vk_debug_callback))
         .build()

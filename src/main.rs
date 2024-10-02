@@ -3,6 +3,7 @@ use std::ffi::CStr;
 use ash::extensions::{ext, khr};
 use ash::vk;
 use cstr::cstr;
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use winit::window as win;
 
 #[derive(Clone, Copy, Debug, thiserror::Error)]
@@ -34,12 +35,8 @@ impl<'a> VulkanState<'a> {
             // ...
         ];
 
-        extensions.extend(
-            vku::surface::extensions(&window)
-                .unwrap()
-                .into_iter()
-                .map(CStr::as_ptr),
-        );
+        extensions
+            .extend_from_slice(vku::surface::extensions(window.raw_display_handle()).unwrap());
 
         let device_extensions = vec![
             khr::Swapchain::name(),
@@ -63,7 +60,11 @@ impl<'a> VulkanState<'a> {
 
         let debug_utils = vku::DebugUtils::new(instance)?;
 
-        let surface = vku::Surface::new(debug_utils, window)?;
+        let surface = vku::Surface::new(
+            debug_utils,
+            window.raw_display_handle(),
+            window.raw_window_handle(),
+        )?;
 
         let phy_devs = vku::PhysicalDevList::list(surface)?;
 
@@ -186,10 +187,11 @@ impl VkCreateInfo {
         if pmods.is_empty() {
             return None;
         }
-        let pmode = pmods
-            .contains(&vk::PresentModeKHR::MAILBOX)
-            .then(|| vk::PresentModeKHR::MAILBOX)
-            .unwrap_or(vk::PresentModeKHR::FIFO);
+        let pmode = if pmods.contains(&vk::PresentModeKHR::MAILBOX) {
+            vk::PresentModeKHR::MAILBOX
+        } else {
+            vk::PresentModeKHR::FIFO
+        };
 
         let vk::Extent2D {
             height: max_height,
@@ -279,5 +281,5 @@ fn main() {
 
     let entry = unsafe { ash::Entry::load().unwrap() };
 
-    let vk_state = VulkanState::create(&entry, &window);
+    let _vk_state = VulkanState::create(&entry, &window);
 }
